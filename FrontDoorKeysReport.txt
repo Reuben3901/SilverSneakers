@@ -47,3 +47,8 @@
 06/01/2016  21:05:27   C001D1                           Mo,Lauryn                         Access Granted
 06/01/2016  21:09:02   C001D1                           2300105732000008,Butch,Rober      Access Granted
 06/01/2016  21:33:25   C001D1                           2300105732000002,Seagull,Duc      Access Granted
+06/01/2016  21:40:25   C001D1                           35123054,Parris,Alicia            Access Granted
+06/01/2016  21:45:25   C001D1                           A000013654,Rodriguez,David        Access Granted
+06/01/2016  21:50:25   C001D1                           35847651,Craft,Swiss              Access Granted
+06/01/2016  21:55:25   C001D1                           A000013685,Reynold,Ryan           Access Granted
+06/01/2016  22:01:25   C001D1                           A000013685,Reynold,Ryan           Access Granted

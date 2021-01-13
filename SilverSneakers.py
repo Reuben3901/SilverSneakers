@@ -68,7 +68,7 @@ sheet = wb.active
 
 ReportRow = 1
 
-SSRegex = re.compile("(\d{5,})")
+SSRegex = re.compile("(\d{5,})|\w(\d{5,})")
 DateRegex = re.compile("(\d*\/\d*\/\d*)") #date
 TimeRegex = re.compile("(\d*\:\d*\:\d*)") #time
 
@@ -118,7 +118,7 @@ for SearchRow in range(1, mbSheet.max_row + 1):
             gotdata = Name[2]
         except:
             gotdata = 'null'
-            
+
         if gotdata != 'null':
             sheet['A' + str(ReportRow)].value = (str(Name[0]) + ' ' + str(Name[1]))
             sheet['B' + str(ReportRow)].value = str(Name[2])
@@ -128,7 +128,6 @@ for SearchRow in range(1, mbSheet.max_row + 1):
                 if str(Name[0]) != 'HYPERLINK':
                     processLog.write('\n--Warning! Bad Record Found! \n')
                     processLog.write('Last: ' + str(Name[0]) +' First: ' + str(Name[1]) + ' is invalid. Check FIRST & LAST & NUMBER on MindBody/Complete Silver Sneakers list!!\n\n')
-
         else:
             sheet['A' + str(ReportRow)].value = str(Name[0])
             sheet['B' + str(ReportRow)].value = str(Name[1])
@@ -169,6 +168,7 @@ sheet = vl.active
 iterations = 0
 duplicateCounter = 0
 
+#Clean up the date 01/01/17 = 1/1/17
 for row in range(1, sheet.max_row + 1):
     Date1 = str(sheet['D' + str(row)].value)
     if Date1[0] == '0' and Date1[3] == '0':
@@ -180,7 +180,7 @@ for row in range(1, sheet.max_row + 1):
 print('Removing Duplicate Check-ins...')
 
 for row in range(2, sheet.max_row + 1):
-    x = (row/sheet.max_row*100)
+    x = (row/sheet.max_row * 100)
     if (10 < x < 10.05):
         print('10% Complete')
     if (20 < x < 20.05):
@@ -234,12 +234,58 @@ wb.save('SilverSneakersReportClean.xlsx')
 processLog.write(str(duplicateCounter) + ' Duplicates deleted!\n')
 
 #------------------------------------------
-#--------Calculate Statistics--------------
+#-------------Split Reports----------------
+#------------------------------------------
+
+vl = openpyxl.load_workbook('SilverSneakersReportClean.xlsx')
+sheet = vl.active
+
+wb1 = openpyxl.Workbook()
+wb2 = openpyxl.Workbook()
+wb3 = openpyxl.Workbook()
+Sheet1 = wb1.active
+Sheet2 = wb2.active
+Sheet3 = wb3.active
+
+print('Splitting Reports...')
+
+counter1 = 0
+counter2 = 0
+counter3 = 0
+for row in range(1, sheet.max_row + 1):
+    if len(str(sheet['C' + str(row)].value)) == 8:
+        counter1 += 1
+        Sheet1['A' + str((counter1))].value = sheet['A' + str(row)].value
+        Sheet1['B' + str((counter1))].value = sheet['B' + str(row)].value
+        Sheet1['C' + str((counter1))].value = sheet['C' + str(row)].value
+        Sheet1['D' + str((counter1))].value = sheet['D' + str(row)].value
+        Sheet1['E' + str((counter1))].value = sheet['E' + str(row)].value
+    if len(str(sheet['C' + str(row)].value)) == 10:
+        counter2 += 1
+        Sheet2['A' + str((counter2))].value = sheet['A' + str(row)].value
+        Sheet2['B' + str((counter2))].value = sheet['B' + str(row)].value
+        Sheet2['C' + str((counter2))].value = sheet['C' + str(row)].value
+        Sheet2['D' + str((counter2))].value = sheet['D' + str(row)].value
+        Sheet2['E' + str((counter2))].value = sheet['E' + str(row)].value
+    if len(str(sheet['C' + str(row)].value)) == 16:
+        counter3 += 1
+        Sheet3['A' + str((counter3))].value = sheet['A' + str(row)].value
+        Sheet3['B' + str((counter3))].value = sheet['B' + str(row)].value
+        Sheet3['C' + str((counter3))].value = sheet['C' + str(row)].value
+        Sheet3['D' + str((counter3))].value = sheet['D' + str(row)].value
+        Sheet3['E' + str((counter3))].value = sheet['E' + str(row)].value
+        
+wb1.save('Silver&Fit.xlsx')
+wb2.save('OptumFitness.xlsx')
+wb3.save('SilverSneakers.xlsx')
+
+#------------------------------------------
+#---------Calculate Statistics-------------
 #------------------------------------------
 
 print('Calculating Statistics...')
 
-ssc = openpyxl.load_workbook('SilverSneakersReportClean.xlsx')
+ssc = openpyxl.load_workbook('SilverSneakers.xlsx')
 sheet = ssc.active
 
 uniqueVisitors = []
@@ -252,7 +298,7 @@ PaidCounter = 0
 UniqueCounter = 0
 TotalCounter = 0
 
-for i in range(len(uniqueVisitors)):    
+for i in range(len(uniqueVisitors)):
     for row in range(1, sheet.max_row + 1):
         if uniqueVisitors[i] == sheet['C' + str(row)].value:
             UniqueCounter += 1
@@ -268,6 +314,4 @@ processLog.write(str(TotalCounter) + ' Total Silver Sneaker Member Visits\n')
 processLog.write(str(PaidCounter) + ' Paid Silver Sneaker Member Visis\n\n')
 processLog.write('ALL DONE!\n')
 processLog.write('Double Check Excel Records.........')
-
-ssc.save('SilverSneakersReportClean.xlsx')            
 processLog.close()
