@@ -18,27 +18,24 @@ processLog = open('Processing_Log.txt', 'a')
 
 ml = openpyxl.load_workbook('CompleteMemberList.xlsx')
 sheet = ml.active
-memberData = {}
+keysDict = {}
 
 for row in range(1, sheet.max_row + 1):
     SS    = sheet['A' + str(row)].value
     Last  = sheet['B' + str(row)].value
     First = sheet['C' + str(row)].value
 
-    memberData.setdefault(SS, {})
-    memberData[SS]['Last'] = str(Last)
-    memberData[SS]['First'] = str(First)
+    keysDict.setdefault(SS, {})
+    keysDict[SS]['Last'] = str(Last)
+    keysDict[SS]['First'] = str(First)
 
-resultFile = open('FrontDoorMemberListDictionary.py', 'w')
-resultFile.write('allData = ' + pprint.pformat(memberData))
-resultFile.close()
 processLog.write('Created Front Door Dictionary\n')
 
 #------------------------------------------
 #--------Create MindBody Dictionary--------
 #------------------------------------------
 
-memberData = {}
+MindBodyDict = {}
 
 for row in range(1, sheet.max_row + 1):
     SS  = sheet['A' + str(row)].value
@@ -46,14 +43,11 @@ for row in range(1, sheet.max_row + 1):
     First    = sheet['C' + str(row)].value
 
     # Make sure the key for Last Name exists.
-    memberData.setdefault(Last, {})
-    memberData[Last].setdefault(First, {'SS': 0})
-    memberData[Last][First]['SS'] = str(SS)
+    MindBodyDict.setdefault(Last, {})
+    MindBodyDict[Last].setdefault(First, {'SS': 0})
+    MindBodyDict[Last][First]['SS'] = str(SS)
 
 processLog.write('Created MindBody Dictionary\n')
-resultFile = open('MBMemberListDictionary.py', 'w')
-resultFile.write('allData = ' + pprint.pformat(memberData))
-resultFile.close()
 
 #------------------------------------------
 #--------Process Front Door Report---------
@@ -61,7 +55,7 @@ resultFile.close()
 
 processLog.write('Processing FrontDoorKeysReport.txt \n')
 
-import re, FrontDoorMemberListDictionary
+import re
 
 wb = openpyxl.Workbook()
 sheet = wb.active
@@ -79,8 +73,8 @@ with open("FrontDoorKeysReport.txt") as f:
         Time = TimeRegex.search(line)
         if SS != None:
             try:
-                sheet['A' + str(ReportRow)].value = FrontDoorMemberListDictionary.allData[SS.group()]['Last']
-                sheet['B' + str(ReportRow)].value = FrontDoorMemberListDictionary.allData[SS.group()]['First']
+                sheet['A' + str(ReportRow)].value = keysDict[SS.group()]['Last']
+                sheet['B' + str(ReportRow)].value = keysDict[SS.group()]['First']
                 sheet['C' + str(ReportRow)].value = SS.group()
                 sheet['D' + str(ReportRow)].value = Date.group()
                 sheet['E' + str(ReportRow)].value = Time.group()
@@ -92,8 +86,6 @@ with open("FrontDoorKeysReport.txt") as f:
 #------------------------------------------
 #---------Process MindBody Report----------
 #------------------------------------------
-
-import MBMemberListDictionary
 
 print('Processing MindBodyReport.xlsx...')
 
@@ -123,7 +115,7 @@ for SearchRow in range(1, mbSheet.max_row + 1):
             sheet['A' + str(ReportRow)].value = (str(Name[0]) + ' ' + str(Name[1]))
             sheet['B' + str(ReportRow)].value = str(Name[2])
             try:
-                sheet['C' + str(ReportRow)].value = MBMemberListDictionary.allData[sheet['A' + str(ReportRow)].value][sheet['B' + str(ReportRow)].value]['SS']
+                sheet['C' + str(ReportRow)].value = MindBodyDict[sheet['A' + str(ReportRow)].value][sheet['B' + str(ReportRow)].value]['SS']
             except:
                 if str(Name[0]) != 'HYPERLINK':
                     processLog.write('\n--Warning! Bad Record Found! \n')
@@ -132,7 +124,7 @@ for SearchRow in range(1, mbSheet.max_row + 1):
             sheet['A' + str(ReportRow)].value = str(Name[0])
             sheet['B' + str(ReportRow)].value = str(Name[1])
             try:
-                sheet['C' + str(ReportRow)].value = MBMemberListDictionary.allData[sheet['A' + str(ReportRow)].value][sheet['B' + str(ReportRow)].value]['SS']
+                sheet['C' + str(ReportRow)].value = MindBodyDict[sheet['A' + str(ReportRow)].value][sheet['B' + str(ReportRow)].value]['SS']
             except:
                 processLog.write('\n--Warning! Bad Record Found! \n')
                 processLog.write('Last: ' + str(Name[0]) + ' First: ' + str(Name[1]) + ' is invalid. Check FIRST & LAST & NUMBER on MindBody/Complete Silver Sneakers list!!\n\n')
@@ -145,26 +137,11 @@ for SearchRow in range(1, mbSheet.max_row + 1):
     SearchRow += 1
 
 #------------------------------------------
-#--------Delete Dictionary Files-----------
-#------------------------------------------
-
-import send2trash
-
-send2trash.send2trash('MBMemberListDictionary.py')
-send2trash.send2trash('FrontDoorMemberListDictionary.py')
-
-processLog.write('Saving SilverSneakersReportsCombined.xlsx!\n')
-
-wb.save('SilverSneakersReportsCombined.xlsx')
-
-#------------------------------------------
 #--------Remove Duplicates-----------------
 #------------------------------------------
 
 processLog.write('Cleaning up, removing duplicates!\n')
 
-vl = openpyxl.load_workbook('SilverSneakersReportsCombined.xlsx')
-sheet = vl.active
 iterations = 0
 duplicateCounter = 0
 
@@ -229,7 +206,6 @@ for row in range(1, sheet.max_row + 1):
         Sheet['D' + str((counter))].value = sheet['D' + str(row)].value
         Sheet['E' + str((counter))].value = sheet['E' + str(row)].value
 
-wb.save('SilverSneakersReportClean.xlsx')
 
 processLog.write(str(duplicateCounter) + ' Duplicates deleted!\n')
 
@@ -237,8 +213,6 @@ processLog.write(str(duplicateCounter) + ' Duplicates deleted!\n')
 #-------------Split Reports----------------
 #------------------------------------------
 
-vl = openpyxl.load_workbook('SilverSneakersReportClean.xlsx')
-sheet = vl.active
 
 wb1 = openpyxl.Workbook()
 wb2 = openpyxl.Workbook()
@@ -252,28 +226,29 @@ print('Splitting Reports...')
 counter1 = 0
 counter2 = 0
 counter3 = 0
-for row in range(1, sheet.max_row + 1):
-    if len(str(sheet['C' + str(row)].value)) == 8:
+
+for row in range(1, Sheet.max_row + 1):
+    if len(str(Sheet['C' + str(row)].value)) == 8:
         counter1 += 1
-        Sheet1['A' + str((counter1))].value = sheet['A' + str(row)].value
-        Sheet1['B' + str((counter1))].value = sheet['B' + str(row)].value
-        Sheet1['C' + str((counter1))].value = sheet['C' + str(row)].value
-        Sheet1['D' + str((counter1))].value = sheet['D' + str(row)].value
-        Sheet1['E' + str((counter1))].value = sheet['E' + str(row)].value
-    if len(str(sheet['C' + str(row)].value)) == 10:
+        Sheet1['A' + str((counter1))].value = Sheet['A' + str(row)].value
+        Sheet1['B' + str((counter1))].value = Sheet['B' + str(row)].value
+        Sheet1['C' + str((counter1))].value = Sheet['C' + str(row)].value
+        Sheet1['D' + str((counter1))].value = Sheet['D' + str(row)].value
+        Sheet1['E' + str((counter1))].value = Sheet['E' + str(row)].value
+    if len(str(Sheet['C' + str(row)].value)) == 10:
         counter2 += 1
-        Sheet2['A' + str((counter2))].value = sheet['A' + str(row)].value
-        Sheet2['B' + str((counter2))].value = sheet['B' + str(row)].value
-        Sheet2['C' + str((counter2))].value = sheet['C' + str(row)].value
-        Sheet2['D' + str((counter2))].value = sheet['D' + str(row)].value
-        Sheet2['E' + str((counter2))].value = sheet['E' + str(row)].value
-    if len(str(sheet['C' + str(row)].value)) == 16:
+        Sheet2['A' + str((counter2))].value = Sheet['A' + str(row)].value
+        Sheet2['B' + str((counter2))].value = Sheet['B' + str(row)].value
+        Sheet2['C' + str((counter2))].value = Sheet['C' + str(row)].value
+        Sheet2['D' + str((counter2))].value = Sheet['D' + str(row)].value
+        Sheet2['E' + str((counter2))].value = Sheet['E' + str(row)].value
+    if len(str(Sheet['C' + str(row)].value)) == 16:
         counter3 += 1
-        Sheet3['A' + str((counter3))].value = sheet['A' + str(row)].value
-        Sheet3['B' + str((counter3))].value = sheet['B' + str(row)].value
-        Sheet3['C' + str((counter3))].value = sheet['C' + str(row)].value
-        Sheet3['D' + str((counter3))].value = sheet['D' + str(row)].value
-        Sheet3['E' + str((counter3))].value = sheet['E' + str(row)].value
+        Sheet3['A' + str((counter3))].value = Sheet['A' + str(row)].value
+        Sheet3['B' + str((counter3))].value = Sheet['B' + str(row)].value
+        Sheet3['C' + str((counter3))].value = Sheet['C' + str(row)].value
+        Sheet3['D' + str((counter3))].value = Sheet['D' + str(row)].value
+        Sheet3['E' + str((counter3))].value = Sheet['E' + str(row)].value
         
 wb1.save('Silver&Fit.xlsx')
 wb2.save('OptumFitness.xlsx')
